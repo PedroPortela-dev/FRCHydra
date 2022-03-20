@@ -12,29 +12,25 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends TimedRobot {
   
   //Motores
-  VictorSPX m_right = new VictorSPX(1);
-  VictorSPX m_right2 = new VictorSPX(2);
-  VictorSPX m_left = new VictorSPX(3);
-  VictorSPX m_left2 = new VictorSPX(4);
-  VictorSPX m_armazem = new VictorSPX(7);
-  VictorSPX m_lancamento = new VictorSPX(6);
+  VictorSPX M_right = new VictorSPX(1);
+  VictorSPX M_right2 = new VictorSPX(2);
+  VictorSPX M_left = new VictorSPX(3);
+  VictorSPX M_left2 = new VictorSPX(4);
+  VictorSPX M_armazem = new VictorSPX(7);
+  VictorSPX M_lancamento = new VictorSPX(6);
   
   //Joystick
-  Joystick m_stick = new Joystick(0);
-  Joystick m_stick2 = new Joystick(1);
+  Joystick J_stick = new Joystick(0);
+  Joystick J_stick2 = new Joystick(1);
 
-  Timer mTimer = new Timer();
+  Timer T_Timer[] = new Timer[2];
 
   int tempoRotina = 30;
   int pov;
   int i;
-  int pa;
-  double limmin=0.2, medio=0.4, limmax=1, bt=limmin;
-  double x1, y1, x2, y2, lt, rt;
-  double mag, sin1, mag2, sin2;
-  double pl, pr, pLanc;
-  double t1, t2;
-  boolean a, b, x, y, davi, daviA, daviX, daviB, gravador;
+  double limMin=0.2, medio=0.4, limMax=1, bt=limMin;
+  double[] p = new double[4];
+  boolean a, b, x, y, davi, daviA, daviX, daviB, gravador, b_Minimo, b_Medio, b_Maximo;
   double[][] vetpower = new double[2][(int)(tempoRotina/0.05)];
 
   public Robot(){
@@ -44,237 +40,120 @@ public class Robot extends TimedRobot {
   public void robotInit(){
     
     //Motores Servos
-    m_right2.follow(m_right);
-    m_left2.follow(m_left);
+    M_right2.follow(M_right);
+    M_left2.follow(M_left);
 
     //Configura Modo Neutro para 4%
-    m_left.configNeutralDeadband(0.04);
-    m_left2.configNeutralDeadband(0.04);
-    m_right.configNeutralDeadband(0.04);
-    m_right2.configNeutralDeadband(0.04);
+    M_left.configNeutralDeadband(0.04);
+    M_left2.configNeutralDeadband(0.04);
+    M_right.configNeutralDeadband(0.04);
+    M_right2.configNeutralDeadband(0.04);
 
     //Travar motores caso força seja 0
-    m_left.setNeutralMode(NeutralMode.Brake);
-    m_left2.setNeutralMode(NeutralMode.Brake);
-    m_right.setNeutralMode(NeutralMode.Brake);
-    m_right2.setNeutralMode(NeutralMode.Brake);
-    m_armazem.setNeutralMode(NeutralMode.Brake);
-    m_lancamento.setNeutralMode(NeutralMode.Brake);
+    M_left.setNeutralMode(NeutralMode.Brake);
+    M_left2.setNeutralMode(NeutralMode.Brake);
+    M_right.setNeutralMode(NeutralMode.Brake);
+    M_right2.setNeutralMode(NeutralMode.Brake);
+    M_armazem.setNeutralMode(NeutralMode.Brake);
+    M_lancamento.setNeutralMode(NeutralMode.Brake);
     
   }
   @Override
   public void teleopInit() {
     java.util.Arrays.fill(vetpower, 0);
     gravador=false;
-    i=0;
-    mTimer.reset();
-    mTimer.start();
+    b_Minimo=false;
+    b_Medio=false;
+    b_Maximo=false;
+    bt=limMin;
+    t_Reset(0);
+    t_Reset(1);
   }
  @Override
  public void teleopPeriodic(){
 
   // Limite da força
-  a=m_stick.getRawButton(1);
-  b=m_stick.getRawButton(2);
-  x=m_stick.getRawButton(3);
+  a=J_stick.getRawButton(1);
+  b=J_stick.getRawButton(2);
+  x=J_stick.getRawButton(3);
 
   if(b){
-    SmartDashboard.putBoolean("Minimo", true);
-    SmartDashboard.putBoolean("Medio", false);
-    SmartDashboard.putBoolean("Maximo", false);
-    bt=limmin;
+    b_Minimo=true;
+    b_Medio=false;
+    b_Maximo=false;
+    bt=limMin;
   }else if(a){
-    SmartDashboard.putBoolean("Minimo", false);
-    SmartDashboard.putBoolean("Medio", true);
-    SmartDashboard.putBoolean("Maximo", false);
-    bt=limmax;
+    b_Minimo=false;
+    b_Medio=true;
+    b_Maximo=false;
+    bt=medio;
   }else if(x){
-    SmartDashboard.putBoolean("Minimo", false);
-    SmartDashboard.putBoolean("Medio", false);
-    SmartDashboard.putBoolean("Maximo", true);
-    bt=limmax;
+    b_Minimo=false;
+    b_Medio=false;
+    b_Maximo=true;
+    bt=limMax;
   }
+  SmartDashboard.putBoolean("Minimo", b_Minimo);
+  SmartDashboard.putBoolean("Medio", b_Medio);
+  SmartDashboard.putBoolean("Maximo", b_Maximo);
 
   // atribuido valores a variaveis
 
-  rt=m_stick.getRawAxis(3);
-  lt=-m_stick.getRawAxis(2);
-  x1=m_stick.getRawAxis(0);
-  y1=-m_stick.getRawAxis(1);
-  x2=m_stick.getRawAxis(4);
-  y2=-m_stick.getRawAxis(5);
-  pov=m_stick.getPOV();
-  t1=(t1>=0.5)?0.5:(mTimer.get()-t1)*2;
-  t2=(t2>=0.5)?0.5:(mTimer.get()-t2)*2;
-  mag = Math.sqrt(Math.pow(x1, 2) + Math.pow(y1, 2));
-  mag2 = Math.sqrt(Math.pow(x2, 2) + Math.pow(y2, 2));
-  sin1=y1/mag;
-  sin2=y2/mag2;
-  mag = mag*t1*2*bt;
-  mag2 = mag2*t2*2*bt;
-
+  pov=J_stick.getPOV();
   // zerando as variaveis em caso de neutro
 
-  if(mag<0.1 && rt==0 && lt==0){
-    t1=mTimer.get();
-    mag=0;
-    x1=0;
-    y1=0;
-  }
-  if(mag2<0.1 && rt==0 && lt==0){
-    t2=mTimer.get();
-    mag2=0;
-    x2=0;
-    y2=0;
-  }
+  t_ResetNeutral(0, 1, 0);
+  t_ResetNeutral(4, 5, 1);
 
   // calculo das forças
-
-  if(rt!=0){
-    if(x1>=0){
-      if(x1<=0.04){
-        x1=0;
-     }
-      SmartDashboard.putString("Condicao","rt!=0 && x1>=0");
-      pr=(1-x1)*rt;
-      pl=rt;
-    }else{
-      if(x1>-0.04){
-        x1=0;
-     }
-      SmartDashboard.putString("Condicao","rt!=0 && x1<0");
-      pr=rt;
-      pl=(1+x1)*rt;
-    }
+  if(j_GetPowerTrigger(3, 0)!=0 || j_GetPowerTrigger(2, 1)!=0)
+  {
+    p_setPowerTrigger(0, 1, 3, 0, 1, "GatilhoDireito");
+    p_setPowerTrigger(1, 0, 2, 1,-1, "GatilhoEsquerdo");
   }
-  else if(lt!=0){
-    if(x1>=0){
-      if(x1<0.04){
-        x1=0;
-     }
-      SmartDashboard.putString("Condicao","lt!=0 && x1>=0");
-      pr=lt;
-      pl=(1-x1)*lt;
-    }else{
-      if(x1>-0.04){
-        x1=0;
-     }
-      SmartDashboard.putString("Condicao","lt!=0 && x1<0");
-      pr=(1+x1)*lt;
-      pl=lt;
-    }   
-  }
-  else if(mag!=0){
-    if(x1>=0 && y1>=0){
-      SmartDashboard.putString("Condicao","x1>=0 && y1>=0");
-      pr=sin1*mag;
-      pl=mag;
-    }
-    else if(x1<0 && y1>=0){
-      SmartDashboard.putString("Condicao","x1<0 && y1>=0");
-      pr=mag;
-      pl=sin1*mag;
-    }
-    else if(x1<0 && y1<0){
-      SmartDashboard.putString("Condicao","x1<0 && y1<0");
-      pr=sin1*mag;
-      pl=-mag;
-    }
-    else if(x1>=0 && y1<0){
-      SmartDashboard.putString("Condicao","x1>=0 && y1<0");
-      pr=-mag;
-      pl=sin1*mag;
-    }
-  }
-  else if(mag2!=0){
-    if(x2>=0 && y2>=0){
-      SmartDashboard.putString("Condicao","x2>=0 && y2>=0");
-      pr=-mag2;
-      pl=-sin2*mag2;
-    }
-    else if(x2<0 && y2>=0){
-      SmartDashboard.putString("Condicao","x2<0 && y2>=0");
-      pr=-sin2*mag2;
-      pl=-mag2;
-    }
-    else if(x2<0 && y2<0){
-      SmartDashboard.putString("Condicao","x2<0 && y2<0");
-      pr=mag2;
-      pl=-sin2*mag2;
-    }
-    else if(x2>=0 && y2<0){
-      SmartDashboard.putString("Condicao","x2<0 && y2<0");
-      pr=-sin2*mag2;
-      pl=mag2;
-    }
+  else if(j_SetPower(0, 1, 0)!=0 || j_SetPower(3, 4, 1)!=0){
+    p_setPowerStick(0, 1, 0, 1, 0, 1, "Joystick Esquerdo");
+    p_setPowerStick(1, 0, 3, 4, 1,-1, "Joystick Direito");
   }
   else if(pov!=-1){
-    if(pov==0){
-      SmartDashboard.putString("Condicao","pov==0");
-      pr=bt;
-      pl=bt;
-    }
-    else if(pov==45){
-      SmartDashboard.putString("Condicao","pov==45");
-      pr=0;
-      pl=bt;
-    }
-    else if(pov==90){
-      SmartDashboard.putString("Condicao","pov==90");
-      pr=-bt;
-      pl=bt;
-    }
-    else if(pov==135){
-      SmartDashboard.putString("Condicao","pov==135");
-      pr=0;
-      pl=-bt;
-    }
-    else if(pov==180){
-      SmartDashboard.putString("Condicao","pov==180");
-      pr=-bt;
-      pl=-bt;
-    }
-    else if(pov==225){
-      SmartDashboard.putString("Condicao","pov==225");
-      pr=-bt;
-      pl=0;
-    }
-    else if(pov==270){
-      SmartDashboard.putString("Condicao","pov==270");
-      pr=bt;
-      pl=-bt;
-    }
-    else if(pov==315){
-      SmartDashboard.putString("Condicao","pov==315");
-      pr=bt;
-      pl=0;
-    }
+    int[][][] POV = 
+    {
+      {
+        {0,270, 315},
+        {90, 180, 225}
+      },
+      {
+        {0,45, 90},
+        {135, 180, 270}
+      }
+    };
+    p[0]=p_getPowerPOV(POV[0][0], POV[0][1]);
+    p[1]=p_getPowerPOV(POV[1][0], POV[1][1]);
+    SmartDashboard.putString("Condicao", "POV");
   }else{
-    SmartDashboard.putString("Condicao","else");
-    pr=0;
-    pl=0;
+    SmartDashboard.putString("Condicao","Nenhuma");
+    p[0]=0;
+    p[1]=0;
   }
 
   // execução dos motores da locomoção
 
-  SmartDashboard.putNumber("Power Right", pr);
-  SmartDashboard.putNumber("Power Left", pl);
-  m_left.set(ControlMode.PercentOutput, pl);
-  m_right.set(ControlMode.PercentOutput, -pr);
+  SmartDashboard.putNumber("Power Right", p[0]);
+  SmartDashboard.putNumber("Power Left", p[1]);
+  M_left.set(ControlMode.PercentOutput, p[0]);
+  M_right.set(ControlMode.PercentOutput, -p[1]);
   
 
   //gravação
 
-  y=m_stick.getRawButtonPressed(4);
-
-  if(y){
+  if(J_stick.getRawButtonPressed(4)){
     gravador=!gravador;
     i=0;
   }
   if(gravador){
       SmartDashboard.putBoolean("Gravador:", true);
-      vetpower[0][i]=pl;
-      vetpower[1][i]=pr;
+      vetpower[0][i]=p[0];
+      vetpower[1][i]=p[1];
       i++;
   }else{
     SmartDashboard.putBoolean("Gravador:", false);
@@ -284,16 +163,16 @@ public class Robot extends TimedRobot {
 
   //Lançamento
 
-  daviA = m_stick2.getRawButton(1);
-  daviB = m_stick2.getRawButton(2);
-  daviX = m_stick2.getRawButton(3);
+  daviA = J_stick2.getRawButton(1);
+  daviB = J_stick2.getRawButton(2);
+  daviX = J_stick2.getRawButton(3);
 
-  pLanc = (daviA)?1:(daviX)?0.75:(daviB)?0.5:0;
-  pa= (daviA || daviB || daviX)?1:0;
+  p[2] = (daviA)?1:(daviX)?0.75:(daviB)?0.5:0;
+  p[3]= (daviA || daviB || daviX)?1:0;
 
-  m_armazem.set(ControlMode.PercentOutput, pa);
-  m_lancamento.set(ControlMode.PercentOutput, -pLanc);
-  SmartDashboard.putNumber("ForcaLancamento", pLanc);
+  M_armazem.set(ControlMode.PercentOutput, p[3]);
+  M_lancamento.set(ControlMode.PercentOutput, -p[2]);
+  SmartDashboard.putNumber("ForcaLancamento", p[2]);
  }
  @Override
  public void autonomousInit() {
@@ -302,11 +181,74 @@ public class Robot extends TimedRobot {
  @Override
  public void autonomousPeriodic() {
   
-  m_left.set(ControlMode.PercentOutput, vetpower[0][i]);
-  m_right.set(ControlMode.PercentOutput, -vetpower[1][i]);
+  M_left.set(ControlMode.PercentOutput, vetpower[0][i]);
+  M_right.set(ControlMode.PercentOutput, -vetpower[1][i]);
   SmartDashboard.putNumber("motor esquerdo", vetpower[0][i]);
   SmartDashboard.putNumber("motor direito", vetpower[1][i]);
   i++;
  }
 
+ public void t_Reset(int t){
+
+  T_Timer[t].reset();
+  T_Timer[t].start();
+ }
+
+ public void t_ResetNeutral(int x, int y, int t){
+
+  if(j_SetPower(x, y, t) <0.1 && j_GetPowerTrigger(3, 0)==0 && j_GetPowerTrigger(2, 1)==0) t_Reset(t);
+
+ }
+
+ public double j_SetEixo(int b){
+
+  return (Math.abs(J_stick.getRawAxis(b))<0.1)?0:J_stick.getRawAxis(b);
+ }
+
+ public double t_SetTimer(int c){
+
+  return (T_Timer[c].get()>=0.5)?1:T_Timer[c].get()*2;
+ }
+
+ public double j_SetSen(int x, int y){
+
+  return j_SetEixo(y)/Math.hypot(j_SetEixo(x), j_SetEixo(y));
+ }
+
+ public double j_SetPower(int x, int y, int t){
+
+  return Math.hypot(j_SetEixo(x), j_SetEixo(y))*t_SetTimer(t)*bt;
+ }
+
+ public double j_GetPowerTrigger(int trigger, int t){
+
+  return J_stick.getRawAxis(trigger)*bt*t_SetTimer(t);
+ }
+
+ public double p_PercentualForca(double x, double limMinX, double limMaxX, double limMinY, double limMaxY){
+
+  double a = (limMaxY-limMinY)/(limMaxX-limMinX);
+
+  return a*(x - limMinX)+limMinY;
+ }
+
+ public void p_setPowerTrigger(int a, int b, int c, int d, int e, String condicao){
+  if(j_GetPowerTrigger(c, d)!=0){
+    p[(j_SetEixo(0)>=0)?a:b]=e*p_PercentualForca(j_SetEixo(0), 0, (j_SetEixo(0)>=0)?1:-1, 1, 0)*j_GetPowerTrigger(c, d);
+    p[(j_SetEixo(0)>=0)?b:a]=e*j_GetPowerTrigger(c, d);
+    SmartDashboard.putString("Condicao", condicao);
+  }
+ }
+
+ public void p_setPowerStick(int a, int b, int c, int d, int e, int f, String condicao){
+  if(j_SetPower(c, d, e)!=0){
+    p[(j_SetEixo(0)/j_SetEixo(1)>=0)?0:1]=f*((j_SetEixo(1)>=0)?1:-1)*p_PercentualForca(j_SetSen(c, d), 0, (j_SetEixo(1)>=0)?1:-1, 0, 1)*j_SetPower(c, d, e);
+    p[(j_SetEixo(0)/j_SetEixo(1)>=0)?1:0]=f*((j_SetEixo(1)>=0)?1:-1)*j_SetPower(c, d, e);
+    SmartDashboard.putString("Condicao", condicao);
+  }
+ }
+
+ public double p_getPowerPOV(int[] condicaoForcaDireta, int[] condicaoForcaInversa){
+   return (pov==condicaoForcaDireta[0] || pov==condicaoForcaDireta[1] || pov==condicaoForcaDireta[2])?bt:(pov==condicaoForcaInversa[0] || pov==condicaoForcaInversa[1] || pov==condicaoForcaInversa[2])?-bt:0;
+ }
 }
