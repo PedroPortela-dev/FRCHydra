@@ -15,14 +15,14 @@ public class P_Joystick{
 
     public static double[] p = new double[4];
 
-    private byte eixos[] =  new byte[2];
+    private int eixos[] =  new int[2];
     Timer T_Timer = new Timer();
     
     public P_Joystick(String Lado){
 
         reset();
-        eixos[0] = (byte)((Lado == "Esquerdo")?0:(Lado == "Direito")?4: (Lado == "G_Esquerdo")?2:1);
-        eixos[1] = (byte)((Lado == "Esquerdo")?1:5);
+        eixos[0] = (Lado == "Esquerdo")?0:(Lado == "Direito")?4: (Lado == "G_Esquerdo")?2:1;
+        eixos[1] = (Lado == "Esquerdo")?1:5;
     }
 
     public static double setBt(){
@@ -61,24 +61,24 @@ public class P_Joystick{
         return (T_Timer.get()>=0.5)?1:T_Timer.get()*2;
     }
 
-    public double getEixo(byte i){
+    public double getEixo(int i){
         
         return (Math.abs(Stick.getRawAxis(eixos[i]))<0.1)?0:Stick.getRawAxis(eixos[i]);
     }
 
     public double j_SetPower(){
 
-        return Math.hypot(getEixo((byte) 0), getEixo((byte) 1))*t_getTimer()*setBt();
+        return Math.hypot(getEixo(0), getEixo(1))*t_getTimer()*setBt();
     }
 
     private double j_SetSen(){
 
-        return getEixo((byte)0)/Math.hypot(getEixo((byte)0), getEixo((byte)1));
+        return getEixo(0)/Math.hypot(getEixo(0), getEixo(1));
     }
 
     public double j_GetPowerTrigger(){
 
-        return getEixo((byte)0)*setBt()*t_getTimer();
+        return getEixo(0)*setBt()*t_getTimer();
     }
 
     public void t_ResetNeutral(){
@@ -95,7 +95,7 @@ public class P_Joystick{
     }
 
     public void p_setPowerTrigger(){
-        byte e = (byte)((eixos[0]==3)?1:-1);
+        byte e = ((eixos[0]==3)?1:-1);
         double a_X = Stick.getRawAxis(0);
         if(j_GetPowerTrigger()!=0){
           p[(a_X>=0)?0:1]=e*j_GetPowerTrigger()*p_PercentualForca(a_X, 0, (a_X>=0)?1:-1, 1, 0);
@@ -104,9 +104,9 @@ public class P_Joystick{
      }
 
      public void p_setPowerStick(){
-        byte f = (byte)((eixos[0]==0)?1:-1);
-        p[(getEixo((byte)0)/getEixo((byte)1)>=0)?0:1]=f*((getEixo((byte)1)>=0)?1:-1)*j_SetPower()*p_PercentualForca(j_SetSen(), 0, (getEixo((byte)1)>=0)?1:-1, 0, 1);
-        p[(getEixo((byte)0)/getEixo((byte)1)>=0)?1:0]=f*((getEixo((byte)1)>=0)?1:-1)*j_SetPower();
+        byte f = ((eixos[0]==0)?1:-1);
+        p[(getEixo(0)/getEixo(1)>=0)?0:1]=f*((getEixo(1)>=0)?1:-1)*j_SetPower()*p_PercentualForca(j_SetSen(), 0, (getEixo(1)>=0)?1:-1, 0, 1);
+        p[(getEixo(0)/getEixo(1)>=0)?1:0]=f*((getEixo(1)>=0)?1:-1)*j_SetPower();
     }
 
     public static short pov(){
